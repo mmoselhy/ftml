@@ -62,8 +62,16 @@ def _apply_fixes(
     stream: Iterator[ConversationExample],
     stats: ConvertStats,
 ) -> Iterator[ConversationExample]:
-    """Apply auto-fixes. Placeholder until fixer.py exists."""
-    yield from stream
+    """Apply auto-fixes to the stream."""
+    from ftml.fixer import apply_fixes
+
+    for example in stream:
+        line = example.metadata.get("line_number", 0)
+        fixed, issues = apply_fixes(example, line=line)
+        fix_count = sum(1 for i in issues if i.severity == Severity.FIX)
+        stats.fixes_applied += fix_count
+        stats.issues.extend(issues)
+        yield fixed
 
 
 def _apply_validation(
