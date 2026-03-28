@@ -1,0 +1,5 @@
+{"messages": [{"role": "user", "content": "What is the capital of France?"}, {"role": "assistant", "content": "The capital of France is Paris."}]}
+{"messages": [{"role": "system", "content": "You are a helpful translator."}, {"role": "user", "content": "Translate 'Hello' to Spanish."}, {"role": "assistant", "content": "Hola"}]}
+{"messages": [{"role": "user", "content": "Write a haiku about programming."}, {"role": "assistant", "content": "Code flows like water\nBugs emerge from the shadows\nTests bring the light back"}]}
+{"messages": [{"role": "user", "content": "What is 2 + 2?"}, {"role": "assistant", "content": "2 + 2 equals 4."}]}
+{"messages": [{"role": "system", "content": "You are a math tutor."}, {"role": "user", "content": "Explain derivatives."}, {"role": "assistant", "content": "A derivative measures the rate of change of a function."}]}

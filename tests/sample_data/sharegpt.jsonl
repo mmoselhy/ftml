@@ -1,0 +1,5 @@
+{"conversations": [{"from": "human", "value": "What is the capital of France?"}, {"from": "gpt", "value": "The capital of France is Paris."}]}
+{"conversations": [{"from": "system", "value": "You are a helpful translator."}, {"from": "human", "value": "Translate 'Hello' to Spanish."}, {"from": "gpt", "value": "Hola"}]}
+{"conversations": [{"from": "human", "value": "Write a haiku."}, {"from": "gpt", "value": "Code flows like water\nBugs emerge from the shadows\nTests bring the light back"}, {"from": "human", "value": "Now one about nature."}, {"from": "gpt", "value": "Leaves fall silently\nRiver carries them away\nWinter waits ahead"}]}
+{"conversations": [{"from": "human", "value": "What is 2 + 2?"}, {"from": "gpt", "value": "2 + 2 equals 4."}]}
+{"conversations": [{"from": "human", "value": "Explain derivatives."}, {"from": "gpt", "value": "A derivative measures the rate of change of a function."}]}

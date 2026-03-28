@@ -1,0 +1,5 @@
+{"text": "<|im_start|>user\nWhat is the capital of France?<|im_end|>\n<|im_start|>assistant\nThe capital of France is Paris.<|im_end|>"}
+{"text": "<|im_start|>system\nYou are a helpful translator.<|im_end|>\n<|im_start|>user\nTranslate 'Hello' to Spanish.<|im_end|>\n<|im_start|>assistant\nHola<|im_end|>"}
+{"text": "<|im_start|>user\nWrite a haiku about programming.<|im_end|>\n<|im_start|>assistant\nCode flows like water\nBugs emerge from the shadows\nTests bring the light back<|im_end|>"}
+{"text": "<|im_start|>user\nWhat is 2 + 2?<|im_end|>\n<|im_start|>assistant\n2 + 2 equals 4.<|im_end|>"}
+{"text": "<|im_start|>system\nYou are a math tutor.<|im_end|>\n<|im_start|>user\nExplain derivatives.<|im_end|>\n<|im_start|>assistant\nA derivative measures the rate of change of a function.<|im_end|>"}

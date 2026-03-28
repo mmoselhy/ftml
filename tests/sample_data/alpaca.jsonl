@@ -1,0 +1,5 @@
+{"instruction": "What is the capital of France?", "input": "", "output": "The capital of France is Paris."}
+{"instruction": "Translate the following to Spanish.", "input": "Hello, how are you?", "output": "Hola, \u00bfc\u00f3mo est\u00e1s?"}
+{"instruction": "Write a haiku about programming.", "input": "", "output": "Code flows like water\nBugs emerge from the shadows\nTests bring the light back"}
+{"instruction": "Summarize the following text.", "input": "Machine learning is a subset of artificial intelligence that focuses on building systems that learn from data.", "output": "Machine learning is an AI subset focused on data-driven learning systems."}
+{"instruction": "What is 2 + 2?", "input": "", "output": "2 + 2 equals 4."}

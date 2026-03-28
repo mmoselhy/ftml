@@ -1,0 +1,1 @@
+"""Platform validation rules registry."""
