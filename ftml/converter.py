@@ -80,5 +80,16 @@ def _apply_validation(
     *,
     platform: Optional[str] = None,
 ) -> Iterator[ConversationExample]:
-    """Apply validation. Placeholder until validator.py exists."""
-    yield from stream
+    """Apply validation to the stream."""
+    from ftml.validator import validate_example
+
+    for example in stream:
+        results = validate_example(example)
+        for r in results:
+            if not r.passed:
+                line = example.metadata.get("line_number", 0)
+                stats.issues.append(Issue(
+                    line=line, severity=Severity.ERROR,
+                    message=f"{r.check_name}: {r.count} issue(s)",
+                ))
+        yield example
