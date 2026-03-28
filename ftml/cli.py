@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -53,7 +52,6 @@ def convert(
     from ftml.converter import convert as do_convert
     from ftml.reporter import console, create_progress, print_header, print_fix_log, print_status
 
-    # Validate input file
     if not input_file.exists():
         console.print(f"[bold red]Error:[/bold red] File not found: {input_file}")
         raise typer.Exit(code=2)
@@ -64,7 +62,6 @@ def convert(
         )
         raise typer.Exit(code=2)
 
-    # Auto-detect format if not specified
     if from_format is None:
         try:
             from ftml.detector import detect_format
@@ -78,15 +75,14 @@ def convert(
             )
             raise typer.Exit(code=3)
 
-    # Determine output path
     if output is None:
         output = input_file.with_suffix(f".{to_format.replace('-', '_')}.jsonl")
 
     print_header(from_format, to_format, input_file.name, quiet=quiet)
 
-    # Count lines for progress bar
     if not quiet:
-        line_count = sum(1 for _ in open(input_file, encoding="utf-8"))
+        with open(input_file, encoding="utf-8") as f:
+            line_count = sum(1 for _ in f)
     else:
         line_count = 0
 
@@ -109,18 +105,16 @@ def convert(
             on_progress=on_progress,
         )
 
-    # Print fix log if --fix was used
     if fix:
         print_fix_log(stats.issues, quiet=quiet)
 
-    # Handle --split post-processing
-    if split is not None and not dry_run and output.exists():
+    if split is not None and not dry_run:
         _split_output(output, split, quiet=quiet)
 
     print_status(stats, str(output), quiet=quiet)
 
-    # Exit code based on errors
-    error_count = sum(1 for i in stats.issues if i.severity.value == "error")
+    from ftml.models import Severity
+    error_count = sum(1 for i in stats.issues if i.severity == Severity.ERROR)
     if error_count > 0:
         raise typer.Exit(code=1)
 

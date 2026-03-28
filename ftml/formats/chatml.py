@@ -37,9 +37,16 @@ def _parse_chatml_text(text: str) -> ConversationExample:
 
 class ChatMLReader(FormatReader):
     def read(self, path: Path) -> Iterator[ConversationExample]:
-        raw = path.read_bytes()
-        stripped = raw.lstrip()
-        if stripped and stripped[0:1] == b"{":
+        # Sniff first non-whitespace byte to detect sub-format
+        with open(path, "rb") as f:
+            for byte in iter(lambda: f.read(1), b""):
+                if byte in (b" ", b"\t", b"\n", b"\r"):
+                    continue
+                is_jsonl = byte == b"{"
+                break
+            else:
+                return  # empty file
+        if is_jsonl:
             yield from self._read_jsonl(path)
         else:
             yield from self._read_plain_text(path)

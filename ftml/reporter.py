@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Optional
 
 from rich.console import Console
@@ -55,7 +56,6 @@ def print_fix_log(issues: list[Issue], quiet: bool = False) -> None:
     table.add_column("Count", justify="right", width=6)
     table.add_column("Description")
 
-    from collections import Counter
     counts: Counter[tuple[Severity, str]] = Counter()
     for issue in fix_issues:
         counts[(issue.severity, issue.message)] += 1

@@ -68,8 +68,9 @@ def _apply_fixes(
     for example in stream:
         line = example.metadata.get("line_number", 0)
         fixed, issues = apply_fixes(example, line=line)
-        fix_count = sum(1 for i in issues if i.severity == Severity.FIX)
-        stats.fixes_applied += fix_count
+        for issue in issues:
+            if issue.severity == Severity.FIX:
+                stats.fixes_applied += 1
         stats.issues.extend(issues)
         yield fixed
 

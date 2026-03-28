@@ -86,8 +86,8 @@ def _warn_single_punctuation_response(ex: ConversationExample, *, line: int) -> 
 
 
 def _warn_identical_instruction_output(ex: ConversationExample, *, line: int) -> list[Issue]:
-    user_turns = [t for t in ex.turns if t.role == "user"]
-    assistant_turns = [t for t in ex.turns if t.role == "assistant"]
-    if user_turns and assistant_turns and user_turns[0].content == assistant_turns[0].content:
+    first_user = next((t for t in ex.turns if t.role == "user"), None)
+    first_assistant = next((t for t in ex.turns if t.role == "assistant"), None)
+    if first_user and first_assistant and first_user.content == first_assistant.content:
         return [Issue(line=line, severity=Severity.WARNING, message="Instruction is identical to output")]
     return []

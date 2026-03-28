@@ -19,21 +19,26 @@ def detect_format(path: Path) -> DetectionResult:
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
 
-    content = path.read_text(encoding="utf-8").strip()
-    if not content:
-        raise ValueError(f"File is empty: {path}")
-
-    # Check CSV by extension first
     if path.suffix.lower() == ".csv":
         return DetectionResult("csv", 0.95, "File extension is .csv")
 
-    # Check for ChatML tokens in raw text
-    if "<|im_start|>" in content and "<|im_end|>" in content:
-        return DetectionResult("chatml", 0.95, 'Found <|im_start|> and <|im_end|> tokens')
+    # Read only the first few lines for detection
+    sample_lines: list[str] = []
+    with open(path, encoding="utf-8") as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            if line:
+                sample_lines.append(line)
+            if len(sample_lines) >= 5:
+                break
 
-    # Try to parse first few lines as JSON
-    lines = content.split("\n")
-    sample_lines = [l.strip() for l in lines[:5] if l.strip()]
+    if not sample_lines:
+        raise ValueError(f"File is empty: {path}")
+
+    # Check for ChatML tokens
+    first_chunk = "\n".join(sample_lines)
+    if "<|im_start|>" in first_chunk and "<|im_end|>" in first_chunk:
+        return DetectionResult("chatml", 0.95, 'Found <|im_start|> and <|im_end|> tokens')
 
     scores: dict[str, tuple[float, str]] = {}
     json_objects = []

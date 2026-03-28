@@ -62,13 +62,21 @@ def compute_stats(
             continue
         turn_dist[label] = count
 
-    buckets = [(0, 256), (257, 512), (513, 1024), (1025, 2048), (2049, float("inf"))]
+    bucket_thresholds = [256, 512, 1024, 2048]
     labels = ["0-256", "257-512", "513-1k", "1k-2k", "2k+"]
-    histogram = []
-    for (low, high), label in zip(buckets, labels):
-        count = sum(1 for t in token_counts if low <= t <= high)
-        pct = (count / total) * 100
-        histogram.append((label, pct))
+    bucket_counts = [0] * 5
+    for t in token_counts:
+        if t <= 256:
+            bucket_counts[0] += 1
+        elif t <= 512:
+            bucket_counts[1] += 1
+        elif t <= 1024:
+            bucket_counts[2] += 1
+        elif t <= 2048:
+            bucket_counts[3] += 1
+        else:
+            bucket_counts[4] += 1
+    histogram = [(label, (c / total) * 100) for label, c in zip(labels, bucket_counts)]
 
     return DatasetStats(
         total_examples=total,

@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Iterator
 
-from ftml.formats.base import FormatReader, FormatWriter
+from ftml.formats.base import FormatReader, FormatWriter, extract_alpaca_fields
 from ftml.models import ConversationExample, Issue, Severity, Turn
 
 
@@ -59,19 +59,7 @@ class AlpacaWriter(FormatWriter):
         count = 0
         with open(path, "w", encoding="utf-8") as f:
             for example in examples:
-                user_content = ""
-                assistant_content = ""
-                for turn in example.turns:
-                    if turn.role == "user" and not user_content:
-                        user_content = turn.content
-                    elif turn.role == "assistant" and not assistant_content:
-                        assistant_content = turn.content
-
-                alpaca_input = example.metadata.get("alpaca_input", "")
-                instruction = user_content
-                if alpaca_input and instruction.endswith(f"\n\n{alpaca_input}"):
-                    instruction = instruction[: -(len(alpaca_input) + 2)]
-
+                instruction, alpaca_input, assistant_content = extract_alpaca_fields(example)
                 record: dict = {
                     "instruction": instruction,
                     "input": alpaca_input,

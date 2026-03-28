@@ -8,9 +8,6 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
-VALID_ROLES = ("user", "assistant")
-
-
 class Turn(BaseModel):
     """A single turn in a conversation."""
 
