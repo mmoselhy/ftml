@@ -137,3 +137,139 @@ def _split_output(output_path: Path, ratio: float, quiet: bool = False) -> None:
     eval_path.write_text("\n".join(lines[split_idx:]) + "\n", encoding="utf-8")
     if not quiet:
         console.print(f"[dim]Split: {split_idx} train, {len(lines) - split_idx} eval[/dim]")
+
+
+@app.command()
+def validate(
+    input_file: Annotated[Path, typer.Argument(help="Path to input file")],
+    format: Annotated[Optional[str], typer.Option("--format", help="Declare format explicitly")] = None,
+    platform: Annotated[Optional[str], typer.Option("--platform", help="Platform-specific rules")] = None,
+    token_model: Annotated[str, typer.Option("--token-model", help="Tokenizer model")] = "cl100k_base",
+    max_tokens: Annotated[Optional[int], typer.Option("--max-tokens", help="Per-example token limit")] = None,
+    strict: Annotated[bool, typer.Option("--strict", help="Treat warnings as errors")] = False,
+) -> None:
+    """Validate a dataset without converting it."""
+    from ftml.detector import detect_format
+    from ftml.reporter import console, print_validation_table
+    from ftml.validator import validate_dataset
+
+    if not input_file.exists():
+        console.print(f"[bold red]Error:[/bold red] File not found: {input_file}")
+        raise typer.Exit(code=2)
+
+    if format is None:
+        result = detect_format(input_file)
+        format = result.format_name
+        console.print(f"[dim]Auto-detected format: {format}[/dim]")
+
+    results = validate_dataset(
+        input_file,
+        format,
+        platform=platform,
+        max_tokens=max_tokens,
+        token_model=token_model,
+        strict=strict,
+    )
+    print_validation_table(results)
+
+    has_errors = any(not r.passed for r in results)
+    if has_errors:
+        console.print("[bold red]✗ Validation failed[/bold red]")
+        raise typer.Exit(code=1)
+    else:
+        console.print("[bold green]✓ Validation passed[/bold green]")
+
+
+@app.command()
+def detect(
+    input_file: Annotated[Path, typer.Argument(help="Path to input file")],
+) -> None:
+    """Auto-detect the format of a dataset file."""
+    from ftml.detector import detect_format
+    from ftml.reporter import console
+
+    if not input_file.exists():
+        console.print(f"[bold red]Error:[/bold red] File not found: {input_file}")
+        raise typer.Exit(code=2)
+
+    try:
+        result = detect_format(input_file)
+        console.print(
+            f"Detected format: [bold]{result.format_name}[/bold] "
+            f"(confidence: {result.confidence:.0%})"
+        )
+        console.print(f"Evidence: {result.evidence}")
+    except ValueError as e:
+        console.print(f"[bold red]Error:[/bold red] {e}")
+        raise typer.Exit(code=3)
+
+
+@app.command()
+def stats(
+    input_file: Annotated[Path, typer.Argument(help="Path to input file")],
+    format: Annotated[Optional[str], typer.Option("--format", help="Declare format explicitly")] = None,
+    token_model: Annotated[str, typer.Option("--token-model", help="Tokenizer model")] = "cl100k_base",
+) -> None:
+    """Print dataset statistics."""
+    from ftml.detector import detect_format
+    from ftml.reporter import console, print_stats_summary, print_token_histogram
+    from ftml.stats import compute_stats
+
+    if not input_file.exists():
+        console.print(f"[bold red]Error:[/bold red] File not found: {input_file}")
+        raise typer.Exit(code=2)
+
+    if format is None:
+        result = detect_format(input_file)
+        format = result.format_name
+        console.print(f"[dim]Auto-detected format: {format}[/dim]")
+
+    ds_stats = compute_stats(input_file, format, token_model=token_model)
+
+    print_stats_summary(
+        total=ds_stats.total_examples,
+        avg_tokens=ds_stats.mean_tokens,
+        min_tokens=ds_stats.min_tokens,
+        max_tokens=ds_stats.max_tokens,
+        pct_system=ds_stats.pct_with_system,
+        pct_multiturn=ds_stats.pct_multiturn,
+    )
+    print_token_histogram(ds_stats.token_histogram)
+
+
+@app.command()
+def formats() -> None:
+    """Print a table of all supported formats."""
+    from rich.table import Table
+
+    from ftml.reporter import console
+
+    table = Table(title="Supported Formats", border_style="cyan")
+    table.add_column("Format", style="bold")
+    table.add_column("Direction")
+    table.add_column("Key Fields")
+    table.add_column("Used By")
+
+    table.add_row("alpaca", "input/output", "instruction, input, output", "Stanford Alpaca, Dolly")
+    table.add_row("sharegpt", "input/output", 'conversations[{from, value}]', "ShareGPT, FastChat, Vicuna")
+    table.add_row("openai-chat", "input/output", 'messages[{role, content}]', "OpenAI Fine-tuning API")
+    table.add_row("chatml", "input/output", "<|im_start|>role\\ncontent<|im_end|>", "ChatML, Qwen, Yi")
+    table.add_row("csv", "input only", "instruction, input, output (columns)", "Spreadsheets, custom data")
+    table.add_row("together", "output only", 'messages[{role, content}]', "Together AI API")
+
+    console.print(table)
+
+    ptable = Table(title="Platform Rules", border_style="blue")
+    ptable.add_column("Platform", style="bold")
+    ptable.add_column("Accepted Formats")
+    ptable.add_column("Min Examples", justify="right")
+    ptable.add_column("Max Tokens", justify="right")
+    ptable.add_column("Notes")
+
+    ptable.add_row("openai", "openai-chat", "10", "16,384", "Required: user + assistant roles")
+    ptable.add_row("together", "openai-chat", "1", "8,192", "System prompt optional")
+    ptable.add_row("axolotl", "alpaca, sharegpt, openai-chat", "1", "-", "System prompt recommended")
+    ptable.add_row("unsloth", "alpaca, openai-chat", "1", "4,096 (warn)", "Default 4k context window")
+    ptable.add_row("huggingface", "any", "1", "-", "Validates JSONL + Unicode")
+
+    console.print(ptable)
