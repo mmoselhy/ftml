@@ -1,74 +1,41 @@
 <p align="center">
-  <h1 align="center">ftml</h1>
-  <p align="center"><strong>The missing ffmpeg for LLM fine-tuning data.</strong></p>
-  <p align="center">
-    <a href="https://pypi.org/project/ftml-cli/"><img src="https://img.shields.io/pypi/v/ftml-cli?color=%2334D058&label=pypi" alt="PyPI"></a>
-    <a href="https://pypi.org/project/ftml-cli/"><img src="https://img.shields.io/pypi/pyversions/ftml-cli?color=%2334D058" alt="Python"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
-  </p>
+  <img src="https://img.shields.io/badge/ftml-ffmpeg%20for%20fine--tuning%20data-black?style=for-the-badge&labelColor=black" alt="ftml">
+</p>
+
+<h3 align="center">Stop writing throwaway scripts to convert training data.</h3>
+
+<p align="center">
+  <a href="https://pypi.org/project/ftml-cli/"><img src="https://img.shields.io/pypi/v/ftml-cli?color=%2334D058&label=pypi" alt="PyPI"></a>
+  <a href="https://pypi.org/project/ftml-cli/"><img src="https://img.shields.io/pypi/pyversions/ftml-cli?color=%2334D058" alt="Python 3.10+"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+</p>
+
+<p align="center">
+  <code>pip install ftml-cli</code>
 </p>
 
 ---
 
-Convert, validate, and auto-fix LLM training datasets between **any format** with a single command. Stop hand-editing JSONL files.
+**You know the drill.** You download a dataset from HuggingFace. It's in ShareGPT format. OpenAI's API wants `messages`. Together wants the same thing but with different token limits. You spend 45 minutes writing a conversion script. Half the rows have trailing whitespace. Some have `"from": "human"` instead of `"role": "user"`. Three lines are malformed JSON.
 
-```
-alpaca  <-->  openai-chat  <-->  sharegpt  <-->  chatml  <-->  csv
-```
-
-<!-- Record a demo: asciinema rec demo.cast && agg demo.cast demo.gif -->
-
-## Why ftml?
-
-You downloaded a dataset from HuggingFace. It's in ShareGPT format. Your fine-tuning provider wants OpenAI chat format. The fields don't match. Some rows are malformed. You write a throwaway Python script for the third time this week.
-
-**ftml fixes this.** One tool that reads every common format, validates against platform rules, auto-fixes common issues, and writes clean output ready for training.
-
-## Install
+**ftml converts, validates, and fixes all of it in one command:**
 
 ```bash
-pip install ftml-cli
-```
-
-## 30-Second Quick Start
-
-```bash
-# Convert any format to OpenAI (auto-detects input)
-ftml convert dataset.jsonl --to openai-chat
-
-# Fix messy data + validate for OpenAI's API
 ftml convert dataset.jsonl --to openai-chat --fix --validate --platform openai
-
-# Just check if your data is valid
-ftml validate dataset.jsonl --platform openai
-
-# What format is this file?
-ftml detect mystery_data.jsonl
-
-# Get a quick overview of your dataset
-ftml stats dataset.jsonl
-
-# Split into train/eval
-ftml convert dataset.jsonl --to openai-chat --split 0.9
 ```
-
-## What It Looks Like
 
 ```
 ╭──────────────────────────────────────────────────────────╮
 │ ftml · LLM dataset format converter                      │
-│ alpaca → openai-chat  ·  train.jsonl                     │
+│ sharegpt → openai-chat  ·  dataset.jsonl                 │
 ╰──────────────────────────────────────────────────────────╯
 Processing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5,000/5,000 0:00:02
 
-        Fixes Applied
 ┌──────────┬───────┬───────────────────────────────────────┐
-│ Type     │ Count │ Description                           │
-├──────────┼───────┼───────────────────────────────────────┤
-│ [FIX]    │    42 │ Stripped whitespace from 1 field(s)   │
-│ [FIX]    │     7 │ Normalized role "human" → "user"      │
-│ [SKIP]   │     3 │ Malformed JSON                        │
-│ [WARN]   │     2 │ Single character assistant response    │
+│ [FIX]    │    42 │ Stripped whitespace from fields        │
+│ [FIX]    │     7 │ Normalized role "human" → "user"       │
+│ [SKIP]   │     3 │ Malformed JSON lines                   │
+│ [WARN]   │     2 │ Single character assistant response     │
 └──────────┴───────┴───────────────────────────────────────┘
 
 ╭───────────────────── Dataset Stats ──────────────────────╮
@@ -77,64 +44,137 @@ Processing ━━━━━━━━━━━━━━━━━━━━━━━
 │ With system  63%        Multi-turn    28%                │
 ╰──────────────────────────────────────────────────────────╯
 
-✓ Converted 4,997 examples → output.openai-chat.jsonl
+✓ Converted 4,997 examples → dataset.openai_chat.jsonl
 ```
 
-## Supported Formats
+## What it does
 
-| Format | Read | Write | Structure | Common Use |
-|--------|:----:|:-----:|-----------|------------|
-| **alpaca** | yes | yes | `{"instruction", "input", "output"}` | Stanford Alpaca, Dolly, many HF datasets |
-| **sharegpt** | yes | yes | `{"conversations": [{"from", "value"}]}` | ShareGPT, FastChat, Vicuna, WizardLM |
-| **openai-chat** | yes | yes | `{"messages": [{"role", "content"}]}` | OpenAI & Together fine-tuning APIs |
-| **chatml** | yes | yes | `<\|im_start\|>role\ncontent<\|im_end\|>` | Qwen, Yi, many open models |
-| **csv** | yes | yes | `instruction,input,output` columns | Spreadsheets, quick prototyping |
-| **together** | -- | yes | Same as openai-chat | Together AI (with platform validation) |
+```
+                        ┌─────────────┐
+  alpaca ──────┐        │             │        ┌──── openai-chat
+  sharegpt ────┤        │             │        ├──── alpaca
+  openai-chat ─┤───────>│    ftml     │───────>├──── sharegpt
+  chatml ──────┤        │             │        ├──── chatml
+  csv ─────────┘        │             │        └──── together
+                        └─────────────┘
+                     auto-detect + fix
+                      + validate + stats
+```
 
-All formats normalize to an internal representation, so **any input format converts to any output format** without data loss.
+**Any input format. Any output format. Zero data loss.**
 
-## Auto-Fix Engine
+## Before ftml
 
-Pass `--fix` to automatically repair common issues:
+```python
+# convert_sharegpt_to_openai.py (your 3rd throwaway script this week)
+import json
 
-| Issue | Action |
-|-------|--------|
-| Leading/trailing whitespace | Stripped |
-| `"from": "human"` / `"gpt"` roles | Normalized to `"user"` / `"assistant"` |
-| Missing `"input"` field in Alpaca | Set to `""` |
-| Empty system prompt (whitespace only) | Removed |
-| Duplicate consecutive role turns | Merged with `\n\n` |
-| Conversation ending on user turn | Trailing user turn removed |
-| Malformed JSON lines | Skipped with line number logged |
+with open("data.jsonl") as f:
+    for line in f:
+        obj = json.loads(line)
+        messages = []
+        for turn in obj["conversations"]:
+            role = "user" if turn["from"] == "human" else "assistant"
+            messages.append({"role": role, "content": turn["value"]})
+        # wait, what about system messages?
+        # what about "gpt" vs "assistant"?
+        # what about empty content?
+        # what about the 47 malformed lines?
+        # ...
+```
 
-Issues that **can't be auto-fixed** are flagged as warnings:
-- Single-punctuation assistant responses (e.g., `"."`)
-- Instruction identical to output
-- Conversations with 3+ consecutive assistant turns
-
-## Platform Validation
-
-Validate against the rules of your target platform with `--platform`:
+## After ftml
 
 ```bash
-ftml validate data.jsonl --platform openai
+ftml convert data.jsonl --to openai-chat --fix
 ```
 
-| Platform | Format | Min Examples | Max Tokens | Notes |
-|----------|--------|:-----------:|:----------:|-------|
-| **openai** | openai-chat | 10 | 16,384 | Requires user + assistant roles |
-| **together** | openai-chat | 1 | 8,192 | System prompt optional |
-| **axolotl** | alpaca, sharegpt, openai-chat | 1 | -- | Warns if no system prompt |
-| **unsloth** | alpaca, openai-chat | 1 | 4,096 (warn) | Default 4k context |
-| **huggingface** | any | 1 | -- | Validates JSONL + Unicode |
+That's it.
 
-## CLI Reference
+## Features
+
+- **Auto-detection** -- don't even tell it the input format, it figures it out
+- **Auto-fix** -- whitespace, role normalization, trailing turns, empty system prompts
+- **Platform validation** -- validate against OpenAI, Together, Axolotl, Unsloth, HuggingFace rules before uploading
+- **Token counting** -- know your dataset stats before you pay for a training run
+- **Train/eval split** -- `--split 0.9` and you're done
+- **Streaming** -- handles large files without loading everything into memory
+- **Rich terminal UI** -- progress bars, colored tables, histograms
+- **Lossless roundtrip** -- convert A to B to A without losing data
+
+## Supported formats
+
+| Format | Read | Write | Used by |
+|--------|:----:|:-----:|---------|
+| **alpaca** | :white_check_mark: | :white_check_mark: | Stanford Alpaca, Dolly, most HuggingFace instruction datasets |
+| **sharegpt** | :white_check_mark: | :white_check_mark: | ShareGPT, FastChat, Vicuna, WizardLM |
+| **openai-chat** | :white_check_mark: | :white_check_mark: | OpenAI fine-tuning API, Together AI |
+| **chatml** | :white_check_mark: | :white_check_mark: | Qwen, Yi, many open-source models |
+| **csv** | :white_check_mark: | :white_check_mark: | Spreadsheets, quick prototyping |
+| **together** | | :white_check_mark: | Together AI (OpenAI format + Together-specific validation) |
+
+## Platform validation
+
+Know your data is valid **before** you upload and wait for a training run to fail:
+
+```bash
+ftml validate my_data.jsonl --platform openai
+```
+
+| Platform | Min Examples | Max Tokens | Key Rules |
+|----------|:-----------:|:----------:|-----------|
+| **OpenAI** | 10 | 16,384 | Must have user + assistant roles |
+| **Together** | 1 | 8,192 | System prompt optional |
+| **Axolotl** | 1 | -- | Warns if missing system prompt |
+| **Unsloth** | 1 | 4,096 | Warns on default context overflow |
+| **HuggingFace** | 1 | -- | JSONL structure + Unicode checks |
+
+## Auto-fix engine
+
+`--fix` automatically repairs these common issues:
+
+| Problem | Fix |
+|---------|-----|
+| Trailing/leading whitespace | Stripped from all fields |
+| `"human"` / `"gpt"` roles | Normalized to `"user"` / `"assistant"` |
+| Empty system prompt | Removed (set to null) |
+| Consecutive same-role turns | Merged |
+| Conversation ending on user turn | Trailing turn removed |
+| Malformed JSON lines | Skipped + logged with line number |
+
+Unfixable issues are flagged as warnings so you can review them manually.
+
+## Quick reference
+
+```bash
+# Convert (auto-detects input format)
+ftml convert data.jsonl --to openai-chat
+
+# Convert + fix + validate for a platform
+ftml convert data.jsonl --to openai-chat --fix --validate --platform openai
+
+# Just validate (no conversion)
+ftml validate data.jsonl --platform together
+
+# What format is this?
+ftml detect mystery_file.jsonl
+
+# Dataset overview
+ftml stats data.jsonl
+
+# Train/eval split
+ftml convert data.jsonl --to openai-chat --split 0.9
+
+# Dry run (validate without writing)
+ftml convert data.jsonl --to openai-chat --fix --validate --dry-run
+```
+
+<details>
+<summary><strong>Full CLI options</strong></summary>
 
 ### `ftml convert`
 
 ```
-ftml convert <input_file> [OPTIONS]
-
   --from FORMAT          Source format (auto-detect if omitted)
   --to FORMAT            Target format (default: openai-chat)
   --output, -o PATH      Output file path
@@ -151,60 +191,50 @@ ftml convert <input_file> [OPTIONS]
 ### `ftml validate`
 
 ```
-ftml validate <input_file> [OPTIONS]
-
   --format FORMAT        Declare format (else auto-detect)
   --platform PLATFORM    Platform-specific rules
   --max-tokens INT       Per-example token limit
   --strict               Treat warnings as errors (exit 1)
 ```
 
-### `ftml detect`
+### `ftml detect` / `ftml stats` / `ftml formats`
 
 ```
-ftml detect <input_file>
+ftml detect <file>                    # Auto-detect format
+ftml stats <file> [--format FORMAT]   # Dataset statistics
+ftml formats                          # List all formats + platform rules
 ```
 
-### `ftml stats`
-
-```
-ftml stats <input_file> [OPTIONS]
-
-  --format FORMAT        Declare format (else auto-detect)
-  --token-model MODEL    Tokenizer for counting
-```
-
-### `ftml formats`
-
-```
-ftml formats              # Print all supported formats and platform rules
-```
-
-## Exit Codes
+### Exit codes
 
 | Code | Meaning |
 |:----:|---------|
 | 0 | Success |
-| 1 | Validation errors found |
-| 2 | Input file not found or unreadable |
-| 3 | Format detection failed |
+| 1 | Validation errors |
+| 2 | File not found |
+| 3 | Detection failed |
+
+</details>
 
 ## Contributing
 
-### Adding a New Format
+Adding a new format is three steps:
 
-Three files, three steps:
-
-1. **Create** `ftml/formats/your_format.py` with `YourReader(FormatReader)` and `YourWriter(FormatWriter)`
-2. **Register** in `ftml/formats/__init__.py` -- add entries to `_READER_REGISTRY` and `_WRITER_REGISTRY`
-3. **Test** -- add sample data to `tests/sample_data/` and a roundtrip test to `tests/test_roundtrip.py`
+1. Create `ftml/formats/your_format.py` with a `Reader` and `Writer`
+2. Add it to the registry in `ftml/formats/__init__.py`
+3. Add sample data + roundtrip test
 
 ```bash
-# Run the test suite
 pip install -e ".[dev]"
-pytest tests/ -v
+pytest tests/ -v   # 93 tests, all passing
 ```
 
 ## License
 
-MIT
+MIT -- do whatever you want with it.
+
+---
+
+<p align="center">
+  <strong>If ftml saved you from writing another conversion script, <a href="https://github.com/mmoselhy/ftml">star the repo</a></strong> :star:
+</p>
